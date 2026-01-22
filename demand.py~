@@ -51,7 +51,6 @@ def base_tourism_demand_eqn(year, demand_elasticity, g_base, tax_rate=TAX_RATE):
 
     return T_curr
 
-''' debugging
 def main():
     g_base = base_growth(2006, 2023)
     gamma = 0.3
@@ -66,4 +65,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
