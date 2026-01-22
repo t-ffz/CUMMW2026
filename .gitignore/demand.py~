@@ -17,3 +17,9 @@ def base_growth(start_year, end_year):
     n = end_year - start_year
     return (T_end / T_start) ** (1 / n) - 1
 
+def main():
+    g = base_growth(2019, 2023)
+    print(f"Base growth rate: {g:.4f}")
+
+if __name__ == "__main__":
+    main()
