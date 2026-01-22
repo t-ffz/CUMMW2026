@@ -1,8 +1,11 @@
 # this calculates the base growth rate g(t) 
 import pandas as pd 
 
+<<<<<<< HEAD
 TAX_RATE = 0.08;
 
+=======
+>>>>>>> refs/remotes/origin/main
 def base_growth(start_year, end_year):
     df = pd.read_csv(
         't2data.csv',
