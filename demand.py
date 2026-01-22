@@ -1,11 +1,8 @@
 # this calculates the base growth rate g(t) 
 import pandas as pd 
 
-<<<<<<< HEAD
 TAX_RATE = 0.08;
 
-=======
->>>>>>> refs/remotes/origin/main
 def base_growth(start_year, end_year):
     df = pd.read_csv(
         't2data.csv',
@@ -54,10 +51,10 @@ def base_tourism_demand_eqn(year, demand_elasticity, g_base, tax_rate=TAX_RATE):
 
     return T_curr
 
-''' debugging
+ #debugging
 def main():
     g_base = base_growth(2006, 2023)
-    gamma = 0.3
+    gamma = 0.1
 
     T_2024 = base_tourism_demand_eqn(
         year=2024,
@@ -69,4 +66,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-'''
