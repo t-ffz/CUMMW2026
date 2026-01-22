@@ -1,7 +1,6 @@
 # this calculates the base growth rate g(t) 
 import pandas as pd 
 
-# T1 being the first year of the range, T2 being the last year of the range
 def base_growth(start_year, end_year):
     df = pd.read_csv(
         't2data.csv',
