@@ -1,21 +1,14 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Model parameters
-TAX_RATE = 0.08     # τ
-ALPHA = 0.4         # α ∈ (0,1)
-RAW_ROWS = slice(0, 5)   # Raw (non-normalized) table only
+TAX_RATE = 0.08
+ALPHA = 0.4
+RAW_ROWS = slice(0, 5)   # ONLY 2019–2023 block
 
 
 def compute_avg_revenue_per_tourist(calibration_year=2023):
-    """
-    Computes average revenue per tourist:
-    r = (Tourism revenue) / (Tourist count)
-
-    Uses raw Juneau data only.
-    """
-
-    df = pd.read_csv("t2data.csv", comment="#")
-    df = df.iloc[RAW_ROWS].copy()
+    df = pd.read_csv("t2data.csv", comment="#").iloc[RAW_ROWS].copy()
 
     df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
     df["Tourist count (million)"] = pd.to_numeric(
@@ -27,72 +20,68 @@ def compute_avg_revenue_per_tourist(calibration_year=2023):
 
     row = df.loc[df["Year"] == calibration_year].iloc[0]
 
-    r = row["Tourism revenue (million $)"] / row["Tourist count (million)"]
-    return r
+    return row["Tourism revenue (million $)"] / row["Tourist count (million)"]
+
 
 def tourism_revenue(T, r):
-    """
-    R(t) = r * T(t)
-    """
     return r * T
 
 
 def tourism_cost(T, r, alpha=ALPHA):
-    """
-    C(t) = c_var * T(t)
-    c_var = α * r
-    """
     return alpha * r * T
 
 
 def government_revenue(R, tax_rate=TAX_RATE):
-    """
-    G(t) = τ * R(t)
-    """
     return tax_rate * R
 
 
 def tourism_profit(T, r, alpha=ALPHA):
-    """
-    P(t) = R(t) - C(t)
-    Simplified: (1 - α) * r * T
-    """
     return (1 - alpha) * r * T
 
-def economic_outputs(T, r=None):
-    """
-    Returns R(t), C(t), G(t), P(t)
-    """
 
-    if r is None:
-        r = compute_avg_revenue_per_tourist()
-
+def economic_outputs(T, r):
     R = tourism_revenue(T, r)
     C = tourism_cost(T, r)
     G = government_revenue(R)
     P = tourism_profit(T, r)
-
     return R, C, G, P
 
-# debugging 
-def main():
-    # 2023 data as checking
-    df = pd.read_csv("t2data.csv", comment="#").iloc[RAW_ROWS]
-    T_2023 = pd.to_numeric(
-    df.loc[df["Year"] == 2023, "Tourist count (million)"].iloc[0],
-    errors="coerce")
+
+def plot_modeled_tourism_revenue():
+    df = pd.read_csv("t2data.csv", comment="#").iloc[RAW_ROWS].copy()
+
+    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+    df["Tourist count (million)"] = pd.to_numeric(
+        df["Tourist count (million)"], errors="coerce"
+    )
+
+    # drop bad rows explicitly
+    df = df.dropna(subset=["Year", "Tourist count (million)"])
+    df = df.sort_values("Year")
 
     r = compute_avg_revenue_per_tourist()
-    R, C, G, P = economic_outputs(T_2023, r)
 
-    print(f"r = {r:.2f}")
-    print(f"T = {T_2023:.3f} million")
-    print(f"R = ${R:.2f} million")
-    print(f"C = ${C:.2f} million")
-    print(f"G = ${G:.2f} million")
-    print(f"P = ${P:.2f} million")
+    years = []
+    revenues = []
+
+    for _, row in df.iterrows():
+        T = row["Tourist count (million)"]
+        year = int(row["Year"])
+
+        R, _, _, _ = economic_outputs(T, r)
+
+        years.append(year)
+        revenues.append(R)
+
+    plt.figure()
+    plt.bar(years, revenues)
+    plt.xlabel("Year")
+    plt.ylabel("Modeled Tourism Revenue (million $)")
+    plt.title("Modeled Tourism Revenue vs. Year")
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
-    main()
+    plot_modeled_tourism_revenue()
 
