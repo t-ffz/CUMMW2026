@@ -1,87 +1,89 @@
+# economic_model.py
 import pandas as pd
 import matplotlib.pyplot as plt
+from demand import base_growth, simulate_tourism_demand
 
-# Model parameters
+# model parameters
 TAX_RATE = 0.08
-ALPHA = 0.4
-RAW_ROWS = slice(0, 5)   # ONLY 2019–2023 block
+ALPHA = 0.4        # variable cost fraction of revenue
+CFIXED = 50        # fixed costs in million $
+R_INITIAL = 100     # average revenue per tourist ($ million / million tourists)
+GAMMA = 0.1         # sensitivity to tax rate
 
 
-def compute_avg_revenue_per_tourist(calibration_year=2023):
-    df = pd.read_csv("t2data.csv", comment="#").iloc[RAW_ROWS].copy()
-
-    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
-    df["Tourist count (million)"] = pd.to_numeric(
-        df["Tourist count (million)"], errors="coerce"
-    )
-    df["Tourism revenue (million $)"] = pd.to_numeric(
-        df["Tourism revenue (million $)"], errors="coerce"
-    )
-
-    row = df.loc[df["Year"] == calibration_year].iloc[0]
-
-    return row["Tourism revenue (million $)"] / row["Tourist count (million)"]
-
-
-def tourism_revenue(T, r):
+# economic Functions
+def tourism_revenue(T, r=R_INITIAL):
     return r * T
 
+def government_revenue(R, tau=TAX_RATE):
+    return tau * R
 
-def tourism_cost(T, r, alpha=ALPHA):
-    return alpha * r * T
+def tourism_cost(T, c_fixed=CFIXED, alpha=ALPHA, r=R_INITIAL):
+    return c_fixed + alpha * r * T
 
-
-def government_revenue(R, tax_rate=TAX_RATE):
-    return tax_rate * R
-
-
-def tourism_profit(T, r, alpha=ALPHA):
-    return (1 - alpha) * r * T
+def tourism_profit(R, C):
+    return R - C
 
 
-def economic_outputs(T, r):
-    R = tourism_revenue(T, r)
-    C = tourism_cost(T, r)
-    G = government_revenue(R)
-    P = tourism_profit(T, r)
-    return R, C, G, P
+# simulation Using Demand Model
+def simulate_economics_2019_2026():
+    # 1. Get base growth from demand.py
+    g_base = base_growth(2006, 2023)
 
+    # 2. Get initial tourists (2019)
+    df_init = pd.read_csv("t2data.csv", comment="#", nrows=5)
+    T0 = df_init.loc[df_init["Year"] == 2019, "Tourist count (million)"].iloc[0]
 
-def plot_modeled_tourism_revenue():
-    df = pd.read_csv("t2data.csv", comment="#").iloc[RAW_ROWS].copy()
-
-    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
-    df["Tourist count (million)"] = pd.to_numeric(
-        df["Tourist count (million)"], errors="coerce"
+    # 3. Simulate tourism demand (2019–2026)
+    demand_df = simulate_tourism_demand(
+        start_year=2019,
+        end_year=2026,
+        T0=T0,
+        g_base=g_base,
+        gamma=GAMMA,
+        tax_rate=TAX_RATE
     )
 
-    # drop bad rows explicitly
-    df = df.dropna(subset=["Year", "Tourist count (million)"])
-    df = df.sort_values("Year")
+    # 4. Compute economic outputs
+    R_vals, G_vals, C_vals, P_vals = [], [], [], []
+    for T in demand_df["T"]:
+        R = tourism_revenue(T)
+        G = government_revenue(R)
+        C = tourism_cost(T)
+        P = tourism_profit(R, C)
 
-    r = compute_avg_revenue_per_tourist()
+        R_vals.append(R)
+        G_vals.append(G)
+        C_vals.append(C)
+        P_vals.append(P)
 
-    years = []
-    revenues = []
+    demand_df["Tourism Revenue"] = R_vals
+    demand_df["Government Revenue"] = G_vals
+    demand_df["Tourism Cost"] = C_vals
+    demand_df["Tourism Profit"] = P_vals
 
-    for _, row in df.iterrows():
-        T = row["Tourist count (million)"]
-        year = int(row["Year"])
+    return demand_df
 
-        R, _, _, _ = economic_outputs(T, r)
 
-        years.append(year)
-        revenues.append(R)
-
-    plt.figure()
-    plt.bar(years, revenues)
+# Plotting Function
+def plot_economics(df):
+    plt.figure(figsize=(10, 6))
+    plt.plot(df["Year"], df["Tourism Revenue"], marker="o", label="Tourism Revenue")
+    plt.plot(df["Year"], df["Government Revenue"], marker="o", label="Government Revenue")
+    plt.plot(df["Year"], df["Tourism Cost"], marker="o", label="Tourism Cost")
+    plt.plot(df["Year"], df["Tourism Profit"], marker="o", label="Tourism Profit")
     plt.xlabel("Year")
-    plt.ylabel("Modeled Tourism Revenue (million $)")
-    plt.title("Modeled Tourism Revenue vs. Year")
+    plt.ylabel("Million $")
+    plt.title("Projected Tourism Economics (2019–2026)")
+    plt.legend()
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
 
 
+# main
 if __name__ == "__main__":
-    plot_modeled_tourism_revenue()
+    df_econ = simulate_economics_2019_2026()
+    print(df_econ)
+    plot_economics(df_econ)
 
