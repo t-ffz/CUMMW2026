@@ -81,7 +81,7 @@ def plot_tourism_demand_model():
 
     demand_df = simulate_tourism_demand(
         start_year=2019,
-        end_year=2023,
+        end_year=2026,
         T0=T_2019,
         g_base=g_base,
         gamma=gamma
@@ -96,7 +96,7 @@ def plot_tourism_demand_model():
 
     plt.xlabel("Year")
     plt.ylabel("Tourists (million)")
-    plt.title("Modeled Tourism Demand (2019–2023)")
+    plt.title("Modeled Tourism Demand (2019–2026)")
     plt.legend()
     plt.tight_layout()
     plt.show()
